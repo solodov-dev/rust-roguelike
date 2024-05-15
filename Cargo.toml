@@ -1,0 +1,8 @@
+[package]
+name = "rust-roguelike"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tcod = "0.15"
+rand = "0.3.9"
