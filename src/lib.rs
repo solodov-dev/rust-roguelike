@@ -1,3 +1,5 @@
+pub mod game;
 pub mod input;
-pub mod model;
+pub mod map;
+pub mod object;
 pub mod renderer;

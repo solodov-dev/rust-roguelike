@@ -1,61 +1,13 @@
+use crate::{object::*, renderer::place_objects};
 use rand::Rng;
 use std::cmp;
-use tcod::{BackgroundFlag, Color, Console};
 
 #[derive(Clone, Copy, Debug)]
-pub struct Tile {
-    pub blocked: bool,
-    pub block_sight: bool,
-}
-
-impl Tile {
-    pub fn empty() -> Self {
-        Tile {
-            blocked: false,
-            block_sight: false,
-        }
-    }
-
-    pub fn wall() -> Self {
-        Tile {
-            blocked: true,
-            block_sight: true,
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct Object {
-    pub x: i32,
-    pub y: i32,
-    pub char: char,
-    pub color: Color,
-}
-
-impl Object {
-    pub fn new(x: i32, y: i32, char: char, color: Color) -> Self {
-        Object { x, y, char, color }
-    }
-
-    pub fn move_by(&mut self, dx: i32, dy: i32, game: &Game) {
-        if !game.map[(self.x + dx) as usize][(self.y + dy) as usize].blocked {
-            self.x += dx;
-            self.y += dy;
-        }
-    }
-
-    pub fn draw(&self, con: &mut dyn Console) {
-        con.set_default_foreground(self.color);
-        con.put_char(self.x, self.y, self.char, BackgroundFlag::None);
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
-struct Rect {
-    x1: i32,
-    y1: i32,
-    x2: i32,
-    y2: i32,
+pub struct Rect {
+    pub x1: i32,
+    pub y1: i32,
+    pub x2: i32,
+    pub y2: i32,
 }
 
 impl Rect {
@@ -111,11 +63,7 @@ pub const MAP_HEIGHT: i32 = 45;
 
 pub type Map = Vec<Vec<Tile>>;
 
-pub struct Game {
-    pub map: Map,
-}
-
-fn make_map(player: &mut Object) -> Map {
+pub fn make_map(objects: &mut Vec<Object>) -> Map {
     let mut map = vec![vec![Tile::wall(); MAP_HEIGHT as usize]; MAP_WIDTH as usize];
     let mut rooms = vec![];
 
@@ -133,12 +81,12 @@ fn make_map(player: &mut Object) -> Map {
 
         if !failed {
             create_room(new_room, &mut map);
+            place_objects(new_room, &map, objects);
 
             let (new_x, new_y) = new_room.center();
 
             if rooms.is_empty() {
-                player.x = new_x;
-                player.y = new_y;
+                objects[PLAYER].set_pos(new_x, new_y);
             } else {
                 let (prev_x, prev_y) = rooms[rooms.len() - 1].center();
 
@@ -158,10 +106,27 @@ fn make_map(player: &mut Object) -> Map {
     map
 }
 
-impl Game {
-    pub fn new(player: &mut Object) -> Self {
-        Game {
-            map: make_map(player),
+#[derive(Clone, Copy, Debug)]
+pub struct Tile {
+    pub blocked: bool,
+    pub block_sight: bool,
+    pub explored: bool,
+}
+
+impl Tile {
+    pub fn empty() -> Self {
+        Tile {
+            blocked: false,
+            explored: false,
+            block_sight: false,
+        }
+    }
+
+    pub fn wall() -> Self {
+        Tile {
+            blocked: true,
+            explored: false,
+            block_sight: true,
         }
     }
 }

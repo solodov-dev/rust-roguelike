@@ -1,8 +1,11 @@
+use rust_roguelike::game::*;
 use rust_roguelike::input::*;
-use rust_roguelike::model::*;
+use rust_roguelike::map::*;
+use rust_roguelike::object::*;
 use rust_roguelike::renderer::*;
 use tcod::colors::*;
 use tcod::console::*;
+use tcod::map::Map as FovMap;
 
 fn main() {
     let root = Root::initializer()
@@ -12,34 +15,62 @@ fn main() {
         .title("Rust/litcod tutorial")
         .init();
 
-    let con = Offscreen::new(MAP_WIDTH, MAP_HEIGHT);
-
-    let mut tcod = Tcod { root, con };
+    let mut tcod = Tcod {
+        root,
+        con: Offscreen::new(MAP_WIDTH, MAP_HEIGHT),
+        fov: FovMap::new(MAP_WIDTH, MAP_HEIGHT),
+    };
 
     tcod::system::set_fps(LIMIT_FPS);
 
-    let player = Object::new(0, 0, '@', WHITE);
+    let mut player = Object::new(0, 0, '@', WHITE, "player", true);
+    player.alive = true;
 
-    let npc = Object::new(SCREEN_WIDTH / 2 - 5, SCREEN_HEIGHT / 2, '&', YELLOW);
+    let mut objects = vec![player];
 
-    let mut objects = [player, npc];
+    let mut game = Game::new(&mut objects);
 
-    let game = Game::new(&mut objects[0]);
+    for y in 0..MAP_HEIGHT {
+        for x in 0..MAP_WIDTH {
+            tcod.fov.set(
+                x,
+                y,
+                !game.map[x as usize][y as usize].block_sight,
+                !game.map[x as usize][y as usize].blocked,
+            );
+        }
+    }
+
+    let mut previous_player_position = (-1, -1);
 
     while !tcod.root.window_closed() {
         tcod.con.clear();
 
         for object in &objects {
-            object.draw(&mut tcod.con);
+            if tcod.fov.is_in_fov(object.x, object.y) {
+                object.draw(&mut tcod.con);
+            }
         }
 
-        render_all(&mut tcod, &game, &objects);
+        let fov_recumpute = previous_player_position != (objects[PLAYER].x, objects[PLAYER].y);
+        render_all(&mut tcod, &mut game, &objects, fov_recumpute);
         tcod.root.flush();
 
-        let player = &mut objects[0];
-        let exit = handle_keys(&mut tcod, &game, player);
-        if exit {
+        let player = &mut objects[PLAYER];
+        previous_player_position = (player.x, player.y);
+
+        let player_action = handle_keys(&mut tcod, &game, &mut objects);
+        println!("ACTION {:?}", player_action);
+        if player_action == PlayerAction::Exit {
             break;
+        }
+
+        if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
+            for object in &objects {
+                if (object as *const _) != (&objects[PLAYER] as *const _) {
+                    println!("The {} growls!", object.name);
+                }
+            }
         }
     }
 }

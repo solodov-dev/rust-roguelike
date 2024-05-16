@@ -1,29 +1,55 @@
 use crate::{
-    model::{Game, Object},
-    renderer::Tcod,
+    game::Game,
+    object::{Object, PLAYER},
+    renderer::{player_move_or_attack, Tcod},
 };
+use tcod::input::Key;
+use tcod::input::KeyCode::*;
 
-pub fn handle_keys(tcod: &mut Tcod, game: &Game, player: &mut Object) -> bool {
-    use tcod::input::Key;
-    use tcod::input::KeyCode::*;
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum PlayerAction {
+    TookTurn,
+    DidntTakeTurn,
+    Exit,
+}
+
+pub fn handle_keys(tcod: &mut Tcod, game: &Game, objects: &mut [Object]) -> PlayerAction {
+    use PlayerAction::*;
 
     let key = tcod.root.wait_for_keypress(true);
-    match key {
-        Key { code: Up, .. } => player.move_by(0, -1, game),
-        Key { code: Down, .. } => player.move_by(0, 1, game),
-        Key { code: Left, .. } => player.move_by(-1, 0, game),
-        Key { code: Right, .. } => player.move_by(1, 0, game),
-        Key {
-            code: Enter,
-            alt: true,
-            ..
-        } => {
+    let player_alive = objects[PLAYER].alive;
+
+    match (key, key.text(), player_alive) {
+        (
+            Key {
+                code: Enter,
+                alt: true,
+                ..
+            },
+            _,
+            _,
+        ) => {
             let fullscreen = tcod.root.is_fullscreen();
             tcod.root.set_fullscreen(!fullscreen);
+            DidntTakeTurn
         }
-        Key { code: Escape, .. } => return true,
-        _ => {}
+        (Key { code: Escape, .. }, _, _) => Exit,
+        (Key { code: Up, .. }, _, true) => {
+            player_move_or_attack(PLAYER, 0, -1, &game.map, objects);
+            TookTurn
+        }
+        (Key { code: Down, .. }, _, true) => {
+            player_move_or_attack(PLAYER, 0, 1, &game.map, objects);
+            TookTurn
+        }
+        (Key { code: Left, .. }, _, true) => {
+            player_move_or_attack(PLAYER, -1, 0, &game.map, objects);
+            TookTurn
+        }
+        (Key { code: Right, .. }, _, true) => {
+            player_move_or_attack(PLAYER, 1, 0, &game.map, objects);
+            TookTurn
+        }
+        _ => DidntTakeTurn,
     }
-
-    false
 }
