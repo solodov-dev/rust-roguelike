@@ -1,4 +1,4 @@
-use crate::{object::*, renderer::place_objects};
+use crate::object::*;
 use rand::Rng;
 use std::cmp;
 
@@ -31,6 +31,31 @@ impl Rect {
             && (self.x2 >= other.x1)
             && (self.y1 <= other.y2)
             && (self.y2 >= other.y1)
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct Tile {
+    pub blocked: bool,
+    pub block_sight: bool,
+    pub explored: bool,
+}
+
+impl Tile {
+    pub fn empty() -> Self {
+        Tile {
+            blocked: false,
+            explored: false,
+            block_sight: false,
+        }
+    }
+
+    pub fn wall() -> Self {
+        Tile {
+            blocked: true,
+            explored: false,
+            block_sight: true,
+        }
     }
 }
 
@@ -104,29 +129,4 @@ pub fn make_map(objects: &mut Vec<Object>) -> Map {
     }
 
     map
-}
-
-#[derive(Clone, Copy, Debug)]
-pub struct Tile {
-    pub blocked: bool,
-    pub block_sight: bool,
-    pub explored: bool,
-}
-
-impl Tile {
-    pub fn empty() -> Self {
-        Tile {
-            blocked: false,
-            explored: false,
-            block_sight: false,
-        }
-    }
-
-    pub fn wall() -> Self {
-        Tile {
-            blocked: true,
-            explored: false,
-            block_sight: true,
-        }
-    }
 }

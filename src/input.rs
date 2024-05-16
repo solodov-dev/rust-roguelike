@@ -1,7 +1,8 @@
 use crate::{
     game::Game,
+    moves::player_move_or_attack,
     object::{Object, PLAYER},
-    renderer::{player_move_or_attack, Tcod},
+    renderer::Tcod,
 };
 use tcod::input::Key;
 use tcod::input::KeyCode::*;
