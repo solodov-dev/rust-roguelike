@@ -14,13 +14,12 @@ pub enum PlayerAction {
     Exit,
 }
 
-pub fn handle_keys(tcod: &mut Tcod, game: &Game, objects: &mut [Object]) -> PlayerAction {
+pub fn handle_keys(tcod: &mut Tcod, game: &mut Game, objects: &mut [Object]) -> PlayerAction {
     use PlayerAction::*;
 
-    let key = tcod.root.wait_for_keypress(true);
     let player_alive = objects[PLAYER].alive;
 
-    match (key, key.text(), player_alive) {
+    match (tcod.key, tcod.key.text(), player_alive) {
         (
             Key {
                 code: Enter,
@@ -36,19 +35,19 @@ pub fn handle_keys(tcod: &mut Tcod, game: &Game, objects: &mut [Object]) -> Play
         }
         (Key { code: Escape, .. }, _, _) => Exit,
         (Key { code: Up, .. }, _, true) => {
-            player_move_or_attack(PLAYER, 0, -1, &game.map, objects);
+            player_move_or_attack(PLAYER, 0, -1, objects, game);
             TookTurn
         }
         (Key { code: Down, .. }, _, true) => {
-            player_move_or_attack(PLAYER, 0, 1, &game.map, objects);
+            player_move_or_attack(PLAYER, 0, 1, objects, game);
             TookTurn
         }
         (Key { code: Left, .. }, _, true) => {
-            player_move_or_attack(PLAYER, -1, 0, &game.map, objects);
+            player_move_or_attack(PLAYER, -1, 0, objects, game);
             TookTurn
         }
         (Key { code: Right, .. }, _, true) => {
-            player_move_or_attack(PLAYER, 1, 0, &game.map, objects);
+            player_move_or_attack(PLAYER, 1, 0, objects, game);
             TookTurn
         }
         _ => DidntTakeTurn,

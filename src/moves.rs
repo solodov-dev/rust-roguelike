@@ -1,4 +1,4 @@
-use crate::{map::Map, object::*, utils::mut_two};
+use crate::{game::Game, map::Map, object::*, utils::mut_two};
 
 pub fn move_by(id: usize, dx: i32, dy: i32, map: &Map, objects: &mut [Object]) {
     let (x, y) = objects[id].pos();
@@ -7,7 +7,7 @@ pub fn move_by(id: usize, dx: i32, dy: i32, map: &Map, objects: &mut [Object]) {
     }
 }
 
-pub fn player_move_or_attack(id: usize, dx: i32, dy: i32, map: &Map, objects: &mut [Object]) {
+pub fn player_move_or_attack(id: usize, dx: i32, dy: i32, objects: &mut [Object], game: &mut Game) {
     let x = objects[PLAYER].x + dx;
     let y = objects[PLAYER].y + dy;
 
@@ -18,10 +18,10 @@ pub fn player_move_or_attack(id: usize, dx: i32, dy: i32, map: &Map, objects: &m
     match target_id {
         Some(target_id) => {
             let (player, target) = mut_two(PLAYER, target_id, objects);
-            player.attack(target);
+            player.attack(target, game);
         }
         None => {
-            move_by(id, dx, dy, map, objects);
+            move_by(id, dx, dy, &game.map, objects);
         }
     }
 }

@@ -2,6 +2,9 @@ use crate::object::*;
 use rand::Rng;
 use std::cmp;
 
+pub const MAP_WIDTH: i32 = 80;
+pub const MAP_HEIGHT: i32 = 43;
+
 #[derive(Clone, Copy, Debug)]
 pub struct Rect {
     pub x1: i32,
@@ -82,9 +85,6 @@ fn create_v_tunnel(y1: i32, y2: i32, x: i32, map: &mut Map) {
         map[x as usize][y as usize] = Tile::empty();
     }
 }
-
-pub const MAP_WIDTH: i32 = 80;
-pub const MAP_HEIGHT: i32 = 45;
 
 pub type Map = Vec<Vec<Tile>>;
 

@@ -1,6 +1,6 @@
-use tcod::colors::DARK_RED;
+use tcod::colors::{DARK_RED, ORANGE, RED};
 
-use crate::object::Object;
+use crate::{game::Game, object::Object};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Fighter {
@@ -18,24 +18,25 @@ pub enum DeathCallback {
 }
 
 impl DeathCallback {
-    pub fn callback(self, object: &mut Object) {
+    pub fn callback(self, object: &mut Object, game: &mut Game) {
         use DeathCallback::*;
-        let callback: fn(&mut Object) = match self {
+        let callback: fn(&mut Object, &mut Game) = match self {
             Player => player_death,
             Monster => monster_death,
         };
-        callback(object);
+        callback(object, game);
     }
 }
 
-fn player_death(player: &mut Object) {
-    println!("You died!");
+fn player_death(player: &mut Object, game: &mut Game) {
+    game.messages.add("You died!", RED);
     player.char = '%';
     player.color = DARK_RED;
 }
 
-fn monster_death(monster: &mut Object) {
-    println!("{} is dead!", monster.name);
+fn monster_death(monster: &mut Object, game: &mut Game) {
+    game.messages
+        .add(format!("{} is dead!", monster.name), ORANGE);
     monster.char = '%';
     monster.color = DARK_RED;
     monster.blocks = false;

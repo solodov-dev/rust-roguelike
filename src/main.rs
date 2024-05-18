@@ -2,12 +2,15 @@ use rust_roguelike::ai::ai_take_turn;
 use rust_roguelike::fighter::DeathCallback;
 use rust_roguelike::fighter::Fighter;
 use rust_roguelike::game::*;
+use rust_roguelike::gui::*;
 use rust_roguelike::input::*;
 use rust_roguelike::map::*;
 use rust_roguelike::object::*;
 use rust_roguelike::renderer::*;
 use tcod::colors::*;
 use tcod::console::*;
+use tcod::input;
+use tcod::input::Event;
 use tcod::map::Map as FovMap;
 
 fn main() {
@@ -22,6 +25,9 @@ fn main() {
         root,
         con: Offscreen::new(MAP_WIDTH, MAP_HEIGHT),
         fov: FovMap::new(MAP_WIDTH, MAP_HEIGHT),
+        panel: Offscreen::new(MAP_WIDTH, PANEL_HEIGHT),
+        key: Default::default(),
+        mouse: Default::default(),
     };
 
     tcod::system::set_fps(LIMIT_FPS);
@@ -53,8 +59,19 @@ fn main() {
 
     let mut previous_player_position = (-1, -1);
 
+    game.messages.add(
+        "Welcome stranger! Prepare to perish in the Tomps of the Ancient Kings.",
+        RED,
+    );
+
     while !tcod.root.window_closed() {
         tcod.con.clear();
+
+        match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
+            Some((_, Event::Mouse(m))) => tcod.mouse = m,
+            Some((_, Event::Key(k))) => tcod.key = k,
+            _ => tcod.key = Default::default(),
+        }
 
         let fov_recompute = previous_player_position != (objects[PLAYER].x, objects[PLAYER].y);
         render_all(&mut tcod, &mut game, &objects, fov_recompute);
@@ -63,7 +80,7 @@ fn main() {
         let player = &mut objects[PLAYER];
         previous_player_position = (player.x, player.y);
 
-        let player_action = handle_keys(&mut tcod, &game, &mut objects);
+        let player_action = handle_keys(&mut tcod, &mut game, &mut objects);
         if player_action == PlayerAction::Exit {
             break;
         }
@@ -71,7 +88,7 @@ fn main() {
         if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
             for id in 0..objects.len() {
                 if objects[id].ai.is_some() {
-                    ai_take_turn(id, &tcod, &game, &mut objects)
+                    ai_take_turn(id, &tcod, &mut game, &mut objects)
                 }
             }
         }

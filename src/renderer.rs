@@ -1,9 +1,11 @@
-use crate::fighter;
 use crate::game::*;
+use crate::gui::*;
 use crate::map::*;
 use crate::object::*;
-use tcod::colors::WHITE;
+use tcod::colors::*;
 use tcod::console::{blit, Offscreen, Root};
+use tcod::input::Key;
+use tcod::input::Mouse;
 use tcod::map::{FovAlgorithm, Map as FovMap};
 use tcod::TextAlignment;
 use tcod::{BackgroundFlag, Color, Console};
@@ -40,6 +42,9 @@ pub struct Tcod {
     pub root: Root,
     pub con: Offscreen,
     pub fov: FovMap,
+    pub panel: Offscreen,
+    pub key: Key,
+    pub mouse: Mouse,
 }
 
 pub fn render_all(tcod: &mut Tcod, game: &mut Game, objects: &[Object], fov_recompute: bool) {
@@ -79,24 +84,63 @@ pub fn render_all(tcod: &mut Tcod, game: &mut Game, objects: &[Object], fov_reco
     for object in &to_draw {
         object.draw(&mut tcod.con);
     }
-
-    tcod.root.set_default_foreground(WHITE);
-    if let Some(fighter) = objects[PLAYER].fighter {
-        tcod.root.print_ex(
-            1,
-            SCREEN_HEIGHT - 2,
-            BackgroundFlag::None,
-            TextAlignment::Left,
-            format!("HP: {}/{} ", fighter.hp, fighter.max_hp),
-        );
-    }
-
+    // blit the contents of "con" to the root console
     blit(
         &tcod.con,
         (0, 0),
         (MAP_WIDTH, MAP_HEIGHT),
         &mut tcod.root,
         (0, 0),
+        1.0,
+        1.0,
+    );
+
+    // prepare to render the GUI panel
+    tcod.panel.set_default_background(BLACK);
+    tcod.panel.clear();
+
+    let mut y = MSG_HEIGHT as i32;
+    for &(ref msg, color) in game.messages.iter().rev() {
+        let msg_height = tcod.panel.get_height_rect(MSG_X, y, MSG_WIDTH, 0, msg);
+        y -= msg_height;
+        if y < 0 {
+            break;
+        }
+        tcod.panel.set_default_background(color);
+        tcod.panel.print_rect(MSG_X, y, MSG_WIDTH, 0, msg);
+    }
+
+    // show the player's stats
+    let hp = objects[PLAYER].fighter.map_or(0, |f| f.hp);
+    let max_hp = objects[PLAYER].fighter.map_or(0, |f| f.max_hp);
+    render_bar(
+        &mut tcod.panel,
+        1,
+        1,
+        BAR_WIDTH,
+        "HP",
+        hp,
+        max_hp,
+        LIGHT_RED,
+        DARKER_RED,
+    );
+
+    tcod.panel.set_default_background(LIGHT_GREY);
+    tcod.panel.print_ex(
+        1,
+        0,
+        BackgroundFlag::None,
+        TextAlignment::Left,
+        get_names_under_mosue(tcod.mouse, objects, &tcod.fov),
+    );
+
+    // blit the contents of `panel` to the root console
+    blit(
+        &tcod.panel,
+        (0, 0),
+        (SCREEN_WIDTH, PANEL_HEIGHT),
+        &mut tcod.root,
+        (0, PANEL_Y),
         1.0,
         1.0,
     );
